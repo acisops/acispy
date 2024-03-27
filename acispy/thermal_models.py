@@ -455,6 +455,8 @@ class ThermalModelRunner(ModelDataset):
         A function which takes the model name, tstart, tstop,
         and a XijaModel object, and allows the user to 
         perform custom operations on the model.
+    no_eclipse : boolean, optional
+        If True, eclipses will be ignored. Default: False
     chandra_models_path : str, optional
         The path to the chandra_models repository to be used
         when obtaining a model specification file. Default:
@@ -483,7 +485,7 @@ class ThermalModelRunner(ModelDataset):
     def __init__(self, name, tstart, tstop, states=None, T_init=None,
                  other_init=None, get_msids=False, dt=328.0, model_spec=None,
                  mask_bad_times=False, ephem_file=None, evolve_method=None,
-                 rk4=None, tl_file=None, compute_model_supp=None, 
+                 rk4=None, tl_file=None, compute_model_supp=None, no_eclipse=False,
                  chandra_models_path=None, chandra_models_version=None):
 
         if name in short_name_rev:
@@ -517,7 +519,7 @@ class ThermalModelRunner(ModelDataset):
         self.tstop = Quantity(tstop_secs, "s")
 
         last_ecl_time = fetch.get_time_range("aoeclips", format='secs')[1]
-        self.no_eclipse = tstop_secs > last_ecl_time
+        self.no_eclipse = no_eclipse or (tstop_secs > last_ecl_time)
         self.no_earth_heat = getattr(self, "no_earth_heat", False)
 
         if states is None:
@@ -1001,6 +1003,8 @@ class SimulateSingleState(ThermalModelRunner):
         A function which takes the model name, tstart, tstop,
         and a XijaModel object, and allows the user to 
         perform custom operations on the model.
+    no_eclipse : boolean, optional
+        If True, eclipses will be ignored. Default: False
 
     Examples
     --------
@@ -1011,7 +1015,7 @@ class SimulateSingleState(ThermalModelRunner):
     """
     def __init__(self, name, tstart, tstop, states, T_init, model_spec=None,
                  dt=328.0, evolve_method=None, rk4=None, no_earth_heat=False,
-                 other_init=None, compute_model_supp=None):
+                 other_init=None, compute_model_supp=None, no_eclipse=False):
 
         _states = make_default_states()
         if "ccd_count" in states and "fep_count" not in states:
@@ -1039,7 +1043,7 @@ class SimulateSingleState(ThermalModelRunner):
         super().__init__(name, datestart, datestop, states=_states, 
                          T_init=T_init, dt=dt, evolve_method=evolve_method, 
                          rk4=rk4, model_spec=model_spec, get_msids=False,
-                         other_init=other_init, 
+                         other_init=other_init, no_eclipse=no_eclipse,
                          compute_model_supp=compute_model_supp)
 
     def write_msids(self, filename, fields, mask_field=None, overwrite=False):
@@ -1110,6 +1114,8 @@ class SimulateECSRun(ThermalModelRunner):
         A function which takes the model name, tstart, tstop,
         and a XijaModel object, and allows the user to 
         perform custom operations on the model.
+    no_eclipse : boolean, optional
+        If True, eclipses will be ignored. Default: False
 
     Examples
     --------
@@ -1120,7 +1126,7 @@ class SimulateECSRun(ThermalModelRunner):
                  dh_heater=0, dt=328.0, evolve_method=None, 
                  rk4=None, model_spec=None, no_earth_heat=False,
                  instrument=None, other_init=None,
-                 compute_model_supp=None):
+                 compute_model_supp=None, no_eclipse=False):
         if name in short_name_rev:
             name = short_name_rev[name]
         if name.lower() == "fptemp_11" and instrument is None:
@@ -1187,6 +1193,7 @@ class SimulateECSRun(ThermalModelRunner):
         super().__init__(name, tstart, tstop, states=states, T_init=T_init,
                          dt=dt, evolve_method=evolve_method, rk4=rk4,
                          model_spec=model_spec, other_init=other_init,
+                         no_eclipse=no_eclipse, 
                          compute_model_supp=compute_model_supp)
 
         mylog.info("Run Parameters")

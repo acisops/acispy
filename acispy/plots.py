@@ -187,7 +187,7 @@ def get_figure(plot, fig, subplot, figsize):
     lines2 = []
     if plot is None:
         if fig is None:
-            fig = plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=figsize, constrained_layout=True)
         if subplot is None:
             subplot = 111
         if not isinstance(subplot, tuple):

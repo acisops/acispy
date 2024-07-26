@@ -181,6 +181,58 @@ class ACISPlot:
     def tight_layout(self, *args, **kwargs):
         self.fig.tight_layout(*args, **kwargs)
 
+    def set_line_label(self, line, label):
+        """
+        Change the field label in the legend.
+
+        Parameters
+        ----------
+        line : integer
+            The line whose label to change given by its number, assuming
+            a starting index of 0.
+        label :
+            The label to set it to.
+
+        Examples
+        --------
+        >>> dp.set_line_label(1, "DEA Temperature")
+        """
+        self.lines[line].set_label(label)
+        self.set_legend()
+
+    def set_legend(self, loc='best', fontsize=16, zorder=None, **kwargs):
+        """
+        Adjust a legend on the plot.
+
+        Parameters
+        ----------
+        loc : string, optional
+            The location of the legend on the plot. Options are:
+            'best'
+            'upper right'
+            'upper left'
+            'lower left'
+            'lower right'
+            'right'
+            'center left'
+            'center right'
+            'lower center'
+            'upper center'
+            'center'
+            Default: 'best', which will try to find the best location for
+            the legend, e.g. away from plotted data.
+        fontsize : integer, optional
+            The size of the legend text. Default: 16 pt.
+
+        Examples
+        --------
+        >>> p.set_legend(loc='right', fontsize=18)
+        """
+        prop = {"size": fontsize}
+        self.legend = self.ax.legend(loc=loc, prop=prop, **kwargs)
+        if zorder is not None:
+            self.legend.set_zorder(zorder)
+
 
 def get_figure(plot, fig, subplot, figsize):
     ax2 = None
@@ -209,101 +261,14 @@ def get_figure(plot, fig, subplot, figsize):
     return fig, ax, lines, ax2, lines2
 
 
-class CustomDatePlot(ACISPlot):
-    r"""
-    Make a custom date vs. value plot.
+class DummyDatePlot(ACISPlot):
 
-    Parameters
-    ----------
-    dates : array of strings
-        The dates to be plotted.
-    values : array
-        The values to be plotted.
-    lw : float, optional
-        The width of the lines in the plots. Default: 2 px.
-    ls : string, optional
-        The line style of the line. Default: '-'
-    fontsize : integer, optional
-        The font size for the labels in the plot. Default: 18 pt.
-    figsize : tuple of integers, optional
-        The size of the plot in (width, height) in inches. Default: (10, 8)
-    plot : :class:`~acispy.plots.DatePlot` or :class:`~acispy.plots.CustomDatePlot`, optional
-        An existing DatePlot to add this plot to. Default: None, one 
-        will be created if not provided.
-    """
-    def __init__(self, dates, values, lw=2, fontsize=18, ls='-',
-                 figsize=(10, 8), color=None, plot=None, fig=None, 
-                 subplot=None, **kwargs):
-        fig, ax, lines, ax2, lines2 = get_figure(plot, fig, subplot, figsize)
-        dates = CxoTime(dates).secs
-        if len(dates.shape) == 2:
-            tstart, tstop = np.asarray(dates)
-            x = pointpair(tstart, tstop)
-            y = pointpair(np.asarray(values))
-        else:
-            x = np.asarray(dates)
-            y = np.asarray(values)
-        if color is None:
-            color = f"C{len(lines)}"
-        ticklocs, fig, ax = plot_cxctime(x, y, fig=fig, ax=ax, lw=lw, ls=ls, 
-                                         color=color, **kwargs)
-        super(CustomDatePlot, self).__init__(fig, ax, lines, ax2, lines2)
-        self.ax.tick_params(which="major", width=2, length=6)
-        self.ax.tick_params(which="minor", width=2, length=3)
-        self.lines.append(ax.lines[-1])
-        self.ax.set_xlabel("Date", fontdict={"size": fontsize})
-        fontProperties = font_manager.FontProperties(size=fontsize)
-        for label in self.ax.get_xticklabels():
-            label.set_fontproperties(fontProperties)
-        for label in self.ax.get_yticklabels():
-            label.set_fontproperties(fontProperties)
-        self.times = dates
-        self.y = values
-
-    def plot_right(self, dates, values, lw=2, fontsize=18,
-                   ls='-', color="magenta", **kwargs):
-        """
-        Plot a quantity on the right x-axis of this plot.
-
-        Parameters
-        ----------
-        dates : array of strings
-            The dates to be plotted.
-        values : array
-            The values to be plotted.
-        lw : float, optional
-            The width of the lines in the plots. Default: 2 px.
-        ls : string, optional
-            The line style of the line. Default: '-'
-        fontsize : integer, optional
-            The font size for the labels in the plot. Default: 18 pt.
-        figsize : tuple of integers, optional
-            The size of the plot in (width, height) in inches. Default: (10, 8)
-        plot : :class:`~acispy.plots.DatePlot` or :class:`~acispy.plots.CustomDatePlot`, optional
-            An existing DatePlot to add this plot to. Default: None, one 
-            will be created if not provided.
-        """
-        dates = CxoTime(dates).secs
-        if self.ax2 is None:
-            self.ax2 = self.ax.twinx()
-            self.ax2.set_zorder(-10)
-            self.ax.patch.set_visible(False)
-        if len(dates.shape) == 2:
-            tstart, tstop = np.asarray(dates)
-            x = pointpair(tstart, tstop)
-            y = pointpair(np.asarray(values))
-        else:
-            x = np.asarray(dates)
-            y = np.asarray(values)
-        plot_cxctime(x, y, fig=self.fig, ax=self.ax2, ls=ls, color=color,
-                     lw=lw, **kwargs)
-        self.ax2.tick_params(which="major", width=2, length=6)
-        self.ax2.tick_params(which="minor", width=2, length=3)
-        fontProperties = font_manager.FontProperties(size=fontsize)
-        for label in self.ax2.get_xticklabels():
-            label.set_fontproperties(fontProperties)
-        for label in self.ax2.get_yticklabels():
-            label.set_fontproperties(fontProperties)
+    def __init__(self, fig, ax, lines=None, ax2=None, lines2=None):
+        if lines is None:
+            lines = []
+        if lines2 is None:
+            lines2 = []
+        super(DummyDatePlot, self).__init__(fig, ax, lines, ax2, lines2)
 
     def set_xlim(self, xmin, xmax):
         """
@@ -408,58 +373,6 @@ class CustomDatePlot(ACISPlot):
         time = datetime.strptime(CxoTime(time).iso, datefmt)
         self.ax.text(time, y, text, fontsize=fontsize, color=color,
                      rotation=rotation, **kwargs)
-
-    def set_line_label(self, line, label):
-        """
-        Change the field label in the legend.
-
-        Parameters
-        ----------
-        line : integer
-            The line whose label to change given by its number, assuming
-            a starting index of 0.
-        label :
-            The label to set it to.
-
-        Examples
-        --------
-        >>> dp.set_line_label(1, "DEA Temperature")
-        """
-        self.lines[line].set_label(label)
-        self.set_legend()
-
-    def set_legend(self, loc='best', fontsize=16, zorder=None, **kwargs):
-        """
-        Adjust a legend on the plot.
-
-        Parameters
-        ----------
-        loc : string, optional
-            The location of the legend on the plot. Options are:
-            'best'
-            'upper right'
-            'upper left'
-            'lower left'
-            'lower right'
-            'right'
-            'center left'
-            'center right'
-            'lower center'
-            'upper center'
-            'center'
-            Default: 'best', which will try to find the best location for
-            the legend, e.g. away from plotted data.
-        fontsize : integer, optional
-            The size of the legend text. Default: 16 pt.
-
-        Examples
-        --------
-        >>> p.set_legend(loc='right', fontsize=18)
-        """
-        prop = {"size": fontsize}
-        self.legend = self.ax.legend(loc=loc, prop=prop, **kwargs)
-        if zorder is not None:
-            self.legend.set_zorder(zorder)
 
     def fill_between(self, datestart, datestop, color, alpha=1.0):
         """
@@ -574,6 +487,118 @@ class CustomDatePlot(ACISPlot):
                                  rotation=90, va='bottom', fontsize=fontsize)
 
 
+def make_dateplots(*args, **kwargs):
+    fig, axes = plt.subplots(*args, **kwargs, constrained_layout=True)
+    if not hasattr(axes, "shape"):
+        return DummyDatePlot(fig, axes)
+    elif len(axes.shape) == 1:
+        return np.array([DummyDatePlot(fig, ax) for ax in axes])
+    elif len(axes.shape) == 2:
+        plots = np.empty(axes.shape, dtype=DummyDatePlot)
+        nx, ny = axes.shape
+        for i in range(nx):
+            for j in range(ny):
+                plots[i][j] = DummyDatePlot(fig, axes[i][j])
+        return plots
+
+
+class CustomDatePlot(DummyDatePlot):
+    r"""
+    Make a custom date vs. value plot.
+
+    Parameters
+    ----------
+    dates : array of strings
+        The dates to be plotted.
+    values : array
+        The values to be plotted.
+    lw : float, optional
+        The width of the lines in the plots. Default: 2 px.
+    ls : string, optional
+        The line style of the line. Default: '-'
+    fontsize : integer, optional
+        The font size for the labels in the plot. Default: 18 pt.
+    figsize : tuple of integers, optional
+        The size of the plot in (width, height) in inches. Default: (10, 8)
+    plot : :class:`~acispy.plots.DatePlot` or :class:`~acispy.plots.CustomDatePlot`, optional
+        An existing DatePlot to add this plot to. Default: None, one 
+        will be created if not provided.
+    """
+    def __init__(self, dates, values, lw=2, fontsize=18, ls='-',
+                 figsize=(10, 8), color=None, plot=None, fig=None, 
+                 subplot=None, **kwargs):
+        fig, ax, lines, ax2, lines2 = get_figure(plot, fig, subplot, figsize)
+        dates = CxoTime(dates).secs
+        if len(dates.shape) == 2:
+            tstart, tstop = np.asarray(dates)
+            x = pointpair(tstart, tstop)
+            y = pointpair(np.asarray(values))
+        else:
+            x = np.asarray(dates)
+            y = np.asarray(values)
+        if color is None:
+            color = f"C{len(lines)}"
+        ticklocs, fig, ax = plot_cxctime(x, y, fig=fig, ax=ax, lw=lw, ls=ls, 
+                                         color=color, **kwargs)
+        super(CustomDatePlot, self).__init__(fig, ax, lines=lines, ax2=ax2, lines2=lines2)
+        self.ax.tick_params(which="major", width=2, length=6)
+        self.ax.tick_params(which="minor", width=2, length=3)
+        self.lines.append(ax.lines[-1])
+        self.ax.set_xlabel("Date", fontdict={"size": fontsize})
+        fontProperties = font_manager.FontProperties(size=fontsize)
+        for label in self.ax.get_xticklabels():
+            label.set_fontproperties(fontProperties)
+        for label in self.ax.get_yticklabels():
+            label.set_fontproperties(fontProperties)
+        self.times = dates
+        self.y = values
+
+    def plot_right(self, dates, values, lw=2, fontsize=18,
+                   ls='-', color="magenta", **kwargs):
+        """
+        Plot a quantity on the right x-axis of this plot.
+
+        Parameters
+        ----------
+        dates : array of strings
+            The dates to be plotted.
+        values : array
+            The values to be plotted.
+        lw : float, optional
+            The width of the lines in the plots. Default: 2 px.
+        ls : string, optional
+            The line style of the line. Default: '-'
+        fontsize : integer, optional
+            The font size for the labels in the plot. Default: 18 pt.
+        figsize : tuple of integers, optional
+            The size of the plot in (width, height) in inches. Default: (10, 8)
+        plot : :class:`~acispy.plots.DatePlot` or :class:`~acispy.plots.CustomDatePlot`, optional
+            An existing DatePlot to add this plot to. Default: None, one 
+            will be created if not provided.
+        """
+        dates = CxoTime(dates).secs
+        if self.ax2 is None:
+            self.ax2 = self.ax.twinx()
+            self.ax2.set_zorder(-10)
+            self.ax.patch.set_visible(False)
+        if len(dates.shape) == 2:
+            tstart, tstop = np.asarray(dates)
+            x = pointpair(tstart, tstop)
+            y = pointpair(np.asarray(values))
+        else:
+            x = np.asarray(dates)
+            y = np.asarray(values)
+        plot_cxctime(x, y, fig=self.fig, ax=self.ax2, ls=ls, color=color,
+                     lw=lw, **kwargs)
+        self.ax2.tick_params(which="major", width=2, length=6)
+        self.ax2.tick_params(which="minor", width=2, length=3)
+        fontProperties = font_manager.FontProperties(size=fontsize)
+        for label in self.ax2.get_xticklabels():
+            label.set_fontproperties(fontProperties)
+        for label in self.ax2.get_yticklabels():
+            label.set_fontproperties(fontProperties)
+
+
 class DatePlot(CustomDatePlot):
     r""" Make a single-panel plot of a quantity (or multiple quantities) 
     vs. date and time. 
@@ -641,7 +666,7 @@ class DatePlot(CustomDatePlot):
                  figsize=(10, 8), plot=None, fig=None, subplot=None,
                  plot_bad=False):
         fig, ax, lines, ax2, lines2 = get_figure(plot, fig, subplot, figsize)
-        super(CustomDatePlot, self).__init__(fig, ax, lines, ax2, lines2)
+        super(CustomDatePlot, self).__init__(fig, ax, lines, ax2=ax2, lines2=lines2)
         fields = ensure_list(fields)
         lw = ensure_list(lw)
         self.num_fields = len(fields)
@@ -881,28 +906,6 @@ class DatePlot(CustomDatePlot):
         fd = self.ds._determine_field(field)
         idx = self.fields.index(fd)
         self.set_line_label(idx, label)
-
-
-class DummyDatePlot:
-    def __init__(self, fig, ax):
-        self.fig = fig
-        self.ax = ax
-        self.lines = []
-
-
-def make_dateplots(*args, **kwargs):
-    fig, axes = plt.subplots(*args, **kwargs)
-    if not hasattr(axes, "shape"):
-        return DummyDatePlot(fig, axes)
-    elif len(axes.shape) == 1:
-        return np.array([DummyDatePlot(fig, ax) for ax in axes])
-    elif len(axes.shape) == 2:
-        plots = np.empty(axes.shape, dtype=DummyDatePlot)
-        nx, ny = axes.shape
-        for i in range(nx):
-            for j in range(ny):
-                plots[i][j] = DummyDatePlot(fig, axes[i][j])
-        return plots
 
 
 class MultiDatePlot:

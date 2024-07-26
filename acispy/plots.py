@@ -392,13 +392,8 @@ class DummyDatePlot(ACISPlot):
             The transparency of the shaded region. Default is 1.0,
             which is opaque.
         """
-        tmin, tmax = self.ax.get_xlim()
-        ybot, ytop = self.ax.get_ylim()
-        t = np.linspace(tmin, tmax, 1000)
         tbegin, tend = cxctime2plotdate(CxoTime([datestart, datestop]).secs)
-        where = (t >= tbegin) & (t <= tend)
-        self.ax.fill_between(t, ybot, ytop, where=where, 
-                             color=color, alpha=alpha)
+        self.ax.axvspan(tbegin, tend, color=color, alpha=alpha)
 
     def annotate_obsids(self, ypos, ds=None, show_manuvrs=False, ywidth=2.0,
                         txtheight=1.0, lw=2.0, fontsize=16, datestart=None,

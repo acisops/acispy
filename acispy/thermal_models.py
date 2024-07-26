@@ -811,7 +811,7 @@ class ThermalModelRunner(ModelDataset):
 
     def make_solarheat_plot(self, node, figfile=None, fig=None):
         """
-        Make a plot which shows the solar heat value vs. pitch.
+        Make a plot which shows the solar heat values vs. pitch.
 
         Parameters
         ----------
@@ -830,15 +830,18 @@ class ThermalModelRunner(ModelDataset):
             fig, ax = plt.subplots(figsize=(15, 10))
         else:
             ax = fig.add_subplot(111)
-        try:
-            comp = self.xija_model.comp[f"solarheat__{node}"]
-        except KeyError:
+        keys = [key for key in self.xija_model.comp.keys() if key.endswith(f"solarheat__{node}")]
+        if len(keys) != 1:
             raise KeyError(f"{node} does not have a SolarHeat component!")
+        key = keys[0]
+        not_simz = key != f"solarheat__{node}"
+        comp = self.xija_model.comp[key]
         comp.plot_solar_heat__pitch(fig, ax)
         ax.set_xlabel("Pitch (deg)", fontsize=18)
         ax.set_ylabel("SolarHeat", fontsize=18)
-        ax.lines[1].set_label("P")
-        ax.lines[2].set_label("P+dP")
+        if not_simz:
+            ax.lines[1].set_label("P")
+            ax.lines[2].set_label("P+dP")
         ax.legend(fontsize=18)
         ax.tick_params(width=2, length=6)
         for axis in ['top', 'bottom', 'left', 'right']:

@@ -945,7 +945,7 @@ class MultiDatePlot:
     def __init__(self, ds, fields, subplots=None,
                  fontsize=15, lw=2, figsize=(12, 12),
                  color=None, plot_bad=False):
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize, constrained_layout=True)
         if subplots is None:
             subplots = len(fields), 1
         self.plots = OrderedDict()
@@ -1071,7 +1071,7 @@ class HistogramPlot(ACISPlot):
         self.xx = ds[field][slc]
 
         if plot is None:
-            fig = plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=figsize, constrained_layout=True)
             ax = fig.add_subplot(111)
         else:
             fig = plot.fig
@@ -1122,7 +1122,7 @@ class HistogramPlot(ACISPlot):
 class PhasePlot(ACISPlot):
     def __init__(self, ds, x_field, y_field, figsize=(12, 12), plot=None):
         if plot is None:
-            fig = plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=figsize, constrained_layout=True)
             ax = fig.add_subplot(111)
         else:
             fig = plot.fig

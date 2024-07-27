@@ -1176,7 +1176,7 @@ class SimulateECSRun(ThermalModelRunner):
             else:
                 raise RuntimeError("Invalid format for 'attitude'! Either "
                                    "supply [pitch, off_nom_roll], an "
-                                   "attitude quaternion, or a load name!")
+                                   "attitude quaternion, or \"vehicle\"!")
             for i in range(4):
                 states[f"q{i+1}"] = np.array([q[i]])
         super().__init__(name, tstart, tstop, states=states, T_init=T_init,

@@ -834,7 +834,7 @@ class ThermalModelRunner(ModelDataset):
         if len(keys) != 1:
             raise KeyError(f"{node} does not have a SolarHeat component!")
         key = keys[0]
-        not_simz = key != f"solarheat__{node}"
+        not_simz = key == f"solarheat__{node}"
         comp = self.xija_model.comp[key]
         comp.plot_solar_heat__pitch(fig, ax)
         ax.set_xlabel("Pitch (deg)", fontsize=18)

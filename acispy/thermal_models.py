@@ -25,6 +25,7 @@ from pathlib import Path
 short_name = {"1deamzt": "dea",
               "1dpamzt": "dpa",
               "1pdeaat": "psmc",
+              "1dpamyt": "1dpamyt",
               "fptemp_11": "acisfp",
               "tmp_fep1_mong": "fep1_mong",
               "tmp_fep1_actel": "fep1_actel",
@@ -39,6 +40,7 @@ short_name_rev = {v: k for k, v in short_name.items()}
 
 full_name = {"1deamzt": "DEA",
              "1dpamzt": "DPA",
+             "1dpamyt": "1DPAMYT",
              "1pdeaat": "PSMC",
              "fptemp_11": "Focal Plane",
              "tmp_fep1_mong": "FEP1 Mongoose",
@@ -49,6 +51,7 @@ full_name = {"1deamzt": "DEA",
 acis_models = ["1deamzt",
                "1dpamzt",
                "1pdeaat",
+               "1dpamyt",
                "fptemp_11",
                "tmp_fep1_mong",
                "tmp_fep1_actel",
@@ -57,6 +60,7 @@ acis_models = ["1deamzt",
 model_classes = {
     "dpa": "DPACheck",
     "dea": "DEACheck",
+    "1dpamyt": "1DPAMYTCheck",
     "psmc": "PSMCCheck",
     "acisfp": "ACISFPCheck",
     "fep1_mong": "FEP1MongCheck",
@@ -300,7 +304,7 @@ class ThermalModelFromRun(ModelDataset):
     loc : string or list of strings
         Path to the directory where the model and state data are stored.
     get_msids : boolean, optional
-        Whether or not to load the MSIDs corresponding to the
+        Whether to load the MSIDs corresponding to the
         temperature models for the same time period from the
         engineering archive. Default: False.
     tl_file : string
@@ -350,7 +354,7 @@ class ThermalModelFromLoad(ModelDataset):
         List of temperature components to get from the load models. If
         not specified all four components will be loaded.
     get_msids : boolean, optional
-        Whether or not to load the MSIDs corresponding to the
+        Whether to load the MSIDs corresponding to the
         temperature models for the same time period from the
         engineering archive. Default: False.
     states_comp : string, optional
@@ -404,7 +408,7 @@ class ThermalModelRunner(ModelDataset):
         values, which can be supplied to initialize these nodes for the
         start of the model run. Default: None
     get_msids : boolean, optional
-        Whether or not to pull data from the engineering archive. 
+        Whether to pull data from the engineering archive. 
         Default: False
     dt : float, optional
         The timestep to use for this run. Default is 328 seconds or is provided
@@ -442,6 +446,8 @@ class ThermalModelRunner(ModelDataset):
         A function which takes the model name, tstart, tstop,
         and a XijaModel object, and allows the user to 
         perform custom operations on the model.
+    no_eclipse : boolean, optional
+        If True, eclipses will be ignored. Default: False
     chandra_models_path : str, optional
         The path to the chandra_models repository to be used
         when obtaining a model specification file. Default:
@@ -470,7 +476,7 @@ class ThermalModelRunner(ModelDataset):
     def __init__(self, name, tstart, tstop, states=None, T_init=None,
                  other_init=None, get_msids=False, dt=328.0, model_spec=None,
                  mask_bad_times=False, ephem_file=None, evolve_method=None,
-                 rk4=None, tl_file=None, compute_model_supp=None, 
+                 rk4=None, tl_file=None, compute_model_supp=None, no_eclipse=False,
                  chandra_models_path=None, chandra_models_version=None):
 
         if name in short_name_rev:
@@ -506,23 +512,26 @@ class ThermalModelRunner(ModelDataset):
         self.tstop = Quantity(tstop_secs, "s")
 
         last_ecl_time = fetch.get_time_range("aoeclips", format='secs')[1]
-        self.no_eclipse = tstop_secs > last_ecl_time
+        self.no_eclipse = no_eclipse or (tstop_secs > last_ecl_time)
         self.no_earth_heat = getattr(self, "no_earth_heat", False)
 
-        if states is not None:
-            if isinstance(states, States):
-                states = states.as_array()
-            elif isinstance(states, dict):
-                if "tstart" not in states:
-                    states["tstart"] = CxoTime(states["datestart"]).secs
-                if "tstop" not in states:
-                    states["tstop"] = CxoTime(states["datestop"]).secs
-                num_states = states["tstart"].size
-                if "letg" not in states:
-                    states["letg"] = np.array(["RETR"] * num_states)
-                if "hetg" not in states:
-                    states["hetg"] = np.array(["RETR"] * num_states)
-                states = dict_to_array(states)
+        if states is None:
+            states = commands.states.get_states(tstart, tstop,
+                                                merge_identical=True).as_array()
+
+        if isinstance(states, States):
+            states = states.as_array()
+        elif isinstance(states, dict):
+            if "tstart" not in states:
+                states["tstart"] = CxoTime(states["datestart"]).secs
+            if "tstop" not in states:
+                states["tstop"] = CxoTime(states["datestop"]).secs
+            num_states = states["tstart"].size
+            if "letg" not in states:
+                states["letg"] = np.array(["RETR"] * num_states)
+            if "hetg" not in states:
+                states["hetg"] = np.array(["RETR"] * num_states)
+            states = dict_to_array(states)
 
         if T_init is None:
             last_tlm_date = fetch.get_time_range(self.name, format='secs')[1]
@@ -535,7 +544,7 @@ class ThermalModelRunner(ModelDataset):
 
         self.T_init = Quantity(T_init, "deg_C")
 
-        if self.name in acis_models and states is not None:
+        if self.name in acis_models:
             self.xija_model = self._compute_acis_model(self.name, tstart, tstop,
                                                        states, dt, T_init, model_spec,
                                                        rk4=rk4, other_init=other_init,
@@ -550,8 +559,6 @@ class ThermalModelRunner(ModelDataset):
         self.model_spec = self.xija_model.model_spec
         self.limits = self.xija_model.limits
 
-        if states is None:
-            states = self.xija_model.cmd_states
         states_obj = States(states)
 
         self.bad_times = getattr(self.xija_model, "bad_times", None)
@@ -565,11 +572,6 @@ class ThermalModelRunner(ModelDataset):
             components.append('dpa_power')
         if 'earthheat__fptemp' in self.xija_model.comp:
             components.append('earthheat__fptemp')
-        if states is None:
-            for c in ["pitch", "roll", "fep_count", "vid_board", "clocking",
-                      "ccd_count", "sim_z"]:
-                if c in self.xija_model.comp:
-                    components.append(c)
 
         masks = {}
         if mask_bad_times and self.bad_times is not None:
@@ -618,16 +620,24 @@ class ThermalModelRunner(ModelDataset):
         if other_init is not None:
             for k, v in other_init.items():
                 model.comp[k].set_data(v)
-        if states is not None:
-            if isinstance(states, np.ndarray):
-                state_names = states.dtype.names
+        if isinstance(states, np.ndarray):
+            state_names = states.dtype.names
+        else:
+            state_names = list(states.keys())
+        state_times = CxoTime(
+            np.array([states["datestart"], states["datestop"]])).secs
+        for k in state_names:
+            if k == "simpos":
+                key = "sim_z"
+            elif k == "off_nom_roll":
+                key = "roll"
+            elif k in model.comp:
+                key = k
             else:
-                state_names = list(states.keys())
-            state_times = CxoTime(
-                np.array([states["datestart"], states["datestop"]])).secs
-            for k in state_names:
-                if k in model.comp:
-                    model.comp[k].set_data(states[k], state_times)
+                continue
+            if key not in model.comp:
+                continue
+            model.comp[key].set_data(states[k], state_times)
         if self.no_eclipse:
             model.comp["eclipse"].set_data(False)
         if self.compute_model_supp is not None:
@@ -647,43 +657,31 @@ class ThermalModelRunner(ModelDataset):
                                model_spec=model_spec, rk4=rk4,
                                evolve_method=evolve_method)
         ephem = self._get_ephemeris(model.tstart, model.tstop, model.times)
-        if states is None:
-            state_times = model.times
-            state_names = ["ccd_count", "fep_count", "vid_board", 
-                           "clocking", "pitch", "roll"]
-            if 'aoattqt1' in model.comp:
-                state_names += ["q1", "q2", "q3", "q4"]
-            states = {}
-            pattern = re.compile("q[1-4]")
-            for n in state_names:
-                nstate = n
-                ncomp = n
-                if pattern.match(n):
-                    ncomp = f'aoattqt{n[-1]}'
-                elif name == "roll":
-                    nstate = "off_nom_roll"
-                states[nstate] = np.array(model.comp[ncomp].dvals)
+        if isinstance(states, np.ndarray):
+            state_names = states.dtype.names
         else:
-            if isinstance(states, np.ndarray):
-                state_names = states.dtype.names
-            else:
-                state_names = list(states.keys())
-            state_times = np.array([states["tstart"], states["tstop"]])
-            model.comp['sim_z'].set_data(np.array(states['simpos']), state_times)
-            if 'pitch' in state_names:
-                model.comp['pitch'].set_data(np.array(states['pitch']), state_times)
-            else:
-                pitch, roll = calc_pitch_roll(model.times, ephem, states)
-                model.comp['pitch'].set_data(pitch, model.times)
-                model.comp['roll'].set_data(roll, model.times)
-            for st in ('ccd_count', 'fep_count', 'vid_board', 'clocking'):
-                model.comp[st].set_data(np.array(states[st]), state_times)
-            if 'dh_heater' in model.comp:
-                dhh = states["dh_heater"] if "dh_heater" in state_names else 0
-                model.comp['dh_heater'].set_data(dhh, state_times)
-            if "off_nom_roll" in state_names:
-                roll = np.array(states["off_nom_roll"])
-                model.comp["roll"].set_data(roll, state_times)
+            state_names = list(states.keys())
+        state_times = np.array([states["tstart"], states["tstop"]])
+        model.comp['sim_z'].set_data(np.array(states['simpos']), state_times)
+        pitch = np.array(states["pitch"]) if "pitch" in state_names else None
+        roll = np.array(states["off_nom_roll"]) if "off_nom_roll" in state_names else None
+        if "q1" in state_names and (pitch is None or roll is None):
+            mylog.warning("Using quaternions to calculate pitch and roll because "
+                          "both were not specified in the states.")
+            pitch, roll = calc_pitch_roll(model.times, ephem, states)
+            att_times = model.times
+        else:
+            att_times = state_times
+        if pitch is None or roll is None:
+            raise ValueError("pitch and off_nom_roll (or quaternions) must be specified "
+                             "in the states!")
+        model.comp['pitch'].set_data(pitch, att_times)
+        model.comp['roll'].set_data(roll, att_times)
+        for st in ('ccd_count', 'fep_count', 'vid_board', 'clocking'):
+            model.comp[st].set_data(np.array(states[st]), state_times)
+        if 'dh_heater' in model.comp:
+            dhh = states["dh_heater"] if "dh_heater" in state_names else 0
+            model.comp['dh_heater'].set_data(dhh, state_times)
         if 'dpa_power' in model.comp:
             # This is just a hack, we're not
             # really setting the power to zero.
@@ -813,7 +811,7 @@ class ThermalModelRunner(ModelDataset):
 
     def make_solarheat_plot(self, node, figfile=None, fig=None):
         """
-        Make a plot which shows the solar heat value vs. pitch.
+        Make a plot which shows the solar heat values vs. pitch.
 
         Parameters
         ----------
@@ -832,15 +830,18 @@ class ThermalModelRunner(ModelDataset):
             fig, ax = plt.subplots(figsize=(15, 10))
         else:
             ax = fig.add_subplot(111)
-        try:
-            comp = self.xija_model.comp[f"solarheat__{node}"]
-        except KeyError:
+        keys = [key for key in self.xija_model.comp.keys() if key.endswith(f"solarheat__{node}")]
+        if len(keys) != 1:
             raise KeyError(f"{node} does not have a SolarHeat component!")
+        key = keys[0]
+        not_simz = key == f"solarheat__{node}"
+        comp = self.xija_model.comp[key]
         comp.plot_solar_heat__pitch(fig, ax)
         ax.set_xlabel("Pitch (deg)", fontsize=18)
         ax.set_ylabel("SolarHeat", fontsize=18)
-        ax.lines[1].set_label("P")
-        ax.lines[2].set_label("P+dP")
+        if not_simz:
+            ax.lines[1].set_label("P")
+            ax.lines[2].set_label("P+dP")
         ax.legend(fontsize=18)
         ax.tick_params(width=2, length=6)
         for axis in ['top', 'bottom', 'left', 'right']:
@@ -999,6 +1000,8 @@ class SimulateSingleState(ThermalModelRunner):
         A function which takes the model name, tstart, tstop,
         and a XijaModel object, and allows the user to 
         perform custom operations on the model.
+    no_eclipse : boolean, optional
+        If True, eclipses will be ignored. Default: False
 
     Examples
     --------
@@ -1009,7 +1012,7 @@ class SimulateSingleState(ThermalModelRunner):
     """
     def __init__(self, name, tstart, tstop, states, T_init, model_spec=None,
                  dt=328.0, evolve_method=None, rk4=None, no_earth_heat=False,
-                 other_init=None, compute_model_supp=None):
+                 other_init=None, compute_model_supp=None, no_eclipse=False):
 
         _states = make_default_states()
         if "ccd_count" in states and "fep_count" not in states:
@@ -1037,7 +1040,7 @@ class SimulateSingleState(ThermalModelRunner):
         super().__init__(name, datestart, datestop, states=_states, 
                          T_init=T_init, dt=dt, evolve_method=evolve_method, 
                          rk4=rk4, model_spec=model_spec, get_msids=False,
-                         other_init=other_init, 
+                         other_init=other_init, no_eclipse=no_eclipse,
                          compute_model_supp=compute_model_supp)
 
     def write_msids(self, filename, fields, mask_field=None, overwrite=False):
@@ -1062,9 +1065,7 @@ class SimulateECSRun(ThermalModelRunner):
     tstart : string or float
         The start time of the single-state run.
     hours : integer or float
-        The length of the ECS measurement in hours. NOTE that the
-        actual length of the ECS run is hours + 10 ks + 12 s, as
-        per the ECS CAP.
+        The length of the ECS measurement in hours.
     T_init : float
         The starting temperature for the model in degrees C.
     attitude : array_like
@@ -1108,6 +1109,8 @@ class SimulateECSRun(ThermalModelRunner):
         A function which takes the model name, tstart, tstop,
         and a XijaModel object, and allows the user to 
         perform custom operations on the model.
+    no_eclipse : boolean, optional
+        If True, eclipses will be ignored. Default: False
 
     Examples
     --------
@@ -1117,7 +1120,8 @@ class SimulateECSRun(ThermalModelRunner):
     def __init__(self, name, tstart, hours, T_init, attitude, ccd_count,
                  dh_heater=0, dt=328.0, evolve_method=None, 
                  rk4=None, model_spec=None, no_earth_heat=False,
-                 other_init=None, compute_model_supp=None):
+                 other_init=None, compute_model_supp=None, 
+                 no_eclipse=False):
         if name in short_name_rev:
             name = short_name_rev[name]
         tstart = CxoTime(tstart).secs
@@ -1172,12 +1176,13 @@ class SimulateECSRun(ThermalModelRunner):
             else:
                 raise RuntimeError("Invalid format for 'attitude'! Either "
                                    "supply [pitch, off_nom_roll], an "
-                                   "attitude quaternion, or a load name!")
+                                   "attitude quaternion, or \"vehicle\"!")
             for i in range(4):
                 states[f"q{i+1}"] = np.array([q[i]])
         super().__init__(name, tstart, tstop, states=states, T_init=T_init,
                          dt=dt, evolve_method=evolve_method, rk4=rk4,
                          model_spec=model_spec, other_init=other_init,
+                         no_eclipse=no_eclipse, 
                          compute_model_supp=compute_model_supp)
 
         mylog.info("Run Parameters")

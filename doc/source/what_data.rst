@@ -10,7 +10,7 @@ or the `MIT tools <http://cxc.cfa.harvard.edu/acis/memos/Dump_Psci.html>`_.
 
 This page gives a broad outline of what ACIS-related data ACISpy can work with. To learn 
 the specific ways of loading and plotting the data, consult :ref:`loading-data` and 
-:ref:`plotting-data`.
+:ref:`Plotting_Data`.
 
 Commanded States
 ----------------

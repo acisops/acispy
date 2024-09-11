@@ -718,6 +718,8 @@ class ThermalModelRunner(ModelDataset):
             format as "states.dat" which is outputted by ACIS 
             thermal model runs for loads.
 
+        Notes
+        -----
         All other keyword arguments which are passed to the main
         :class:`~acispy.thermal_models.ThermalModelRunner`
         constructor can be passed to this method as well.
@@ -738,6 +740,8 @@ class ThermalModelRunner(ModelDataset):
         cmds : list of commands or CommandTable 
             The commands from which to derive states. 
 
+        Notes
+        -----
         All other keyword arguments which are passed to the main
         :class:`~acispy.thermal_models.ThermalModelRunner`
         constructor can be passed to this method as well.
@@ -763,6 +767,8 @@ class ThermalModelRunner(ModelDataset):
         backstop_file : string
             The path to the backstop file. 
         days : float
+            The number of days to go back from the first command in the
+            backstop file to get the initial state. Default: 3
         T_init : float, optional
             The initial temperature for the thermal model run. If None,
             an initial temperature will be determined from telemetry.
@@ -770,6 +776,8 @@ class ThermalModelRunner(ModelDataset):
         other_cmds : list of commands or CommandTable
             Other commands to be included in the list. 
 
+        Notes
+        -----
         All other keyword arguments which are passed to the main
         :class:`~acispy.thermal_models.ThermalModelRunner`
         constructor can be passed to this method as well.
@@ -1060,6 +1068,8 @@ class SimulateECSRun(ThermalModelRunner):
     """
     Class for simulating thermal models for ECS measurements.
 
+    Parameters
+    ----------
     name : string
         The msid of the model to simulate.
     tstart : string or float
@@ -1071,9 +1081,9 @@ class SimulateECSRun(ThermalModelRunner):
     attitude : array_like
         The input attitude for this simulated ECS run. Can be one of three
         types:
-            * (pitch, roll) combination, e.g. (155.0, 5.0)
-            * Attitude quaternion, e.g [1.0, 0.0, 0.0, 0.0]
-            * "vehicle" to use the vehicle load attitudes for the run.
+        * (pitch, roll) combination, e.g. (155.0, 5.0)
+        * Attitude quaternion, e.g [1.0, 0.0, 0.0, 0.0]
+        * "vehicle" to use the vehicle load attitudes for the run.
         If the (pitch, roll) combination is chosen, note that a default
         quaternion of [1.0, 0.0, 0.0, 0.0] will be used, which means that the
         focal plane prediction may be inaccurate since the earth solid angle

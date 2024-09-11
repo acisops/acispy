@@ -163,7 +163,7 @@ type of data desired and its name, for example:
     ds["model", "1deamzt"] # gives you the "1deamzt" model component
 
 A ``(type, name)`` pairing and its associated data are referred to as a "field". We'll
-encounter examples of :ref:`derived-fields` later, which are derivations of new fields from
+encounter examples of :ref:`Derived_Fields` later, which are derivations of new fields from
 existing ones.
 
 It is not strictly necessary to specify the ``(type, name)`` tuple if the ``name`` is 

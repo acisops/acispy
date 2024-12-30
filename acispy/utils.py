@@ -112,6 +112,10 @@ state_labels = {"ccd_count": "CCD Count",
                 "datestop": "Stop Date",
                 "date": "Date",
                 "time": "Time",
+                "hrc_15v": "HRC 15V",
+                "hrc_24v": "HRC 24V",
+                "hrc_i": "HRC-I",
+                "hrc_s": "HRC-S",
                 "dh_heater": "Detector Housing Heater",
                 "eclipse": "Eclipse"}
 

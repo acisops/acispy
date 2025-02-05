@@ -2,7 +2,7 @@ from astropy.io import ascii
 import requests
 from acispy.units import get_units
 from acispy.utils import ensure_list, find_load, calc_off_nom_rolls, \
-    dict_to_array
+    dict_to_array, default_state_keys
 from acispy.units import APQuantity, APStringArray, Quantity
 from acispy.time_series import TimeSeriesData
 import numpy as np
@@ -83,6 +83,8 @@ class States(TimeSeriesData):
         tstop = CxoTime(tstop).date
         if state_keys is not None:
             state_keys = ensure_list(state_keys)
+        else:
+            state_keys = default_state_keys
         t = states.get_states(tstart, tstop, state_keys=state_keys,
                               merge_identical=True).as_array()
         return cls(t)
@@ -112,6 +114,10 @@ class States(TimeSeriesData):
     @classmethod
     def from_commands(cls, cmds, state_keys=None):
         from kadi.commands import states
+        if state_keys is not None:
+            state_keys = ensure_list(state_keys)
+        else:
+            state_keys = default_state_keys
         t = states.get_states(cmds=cmds, state_keys=state_keys,
                               merge_identical=True).as_array()
         return cls(t)

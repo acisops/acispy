@@ -73,11 +73,10 @@ def calc_off_nom_rolls(states):
                      for time, att in zip(times, atts)])
 
 
-default_states = ["ccd_count", "clocking", "ra", "dec", "dither", "fep_count",
-                  "hetg", "letg", "obsid", "pcad_mode", "pitch", "power_cmd",
-                  "roll", "si_mode", "simfa_pos", "simpos", "q1", "q2", "q3",
-                  "q4", "trans_keys", "vid_board", "datestart", "datestop",
-                  "off_nom_roll"]
+default_state_keys = ["ccd_count", "clocking", "ra", "dec", "dither", "fep_count",
+                      "hetg", "letg", "obsid", "pcad_mode", "pitch", "power_cmd",
+                      "roll", "si_mode", "simfa_pos", "simpos", "q1", "q2", "q3",
+                      "q4", "trans_keys", "vid_board", "off_nom_roll", "hrc_15v"]
 
 state_labels = {"ccd_count": "CCD Count",
                 "clocking": "Clocking",

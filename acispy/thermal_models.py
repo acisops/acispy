@@ -11,7 +11,7 @@ from acispy.msids import MSIDs
 from acispy.time_series import EmptyTimeSeries
 from acispy.utils import mylog, \
     ensure_list, plotdate2cxctime, \
-    dict_to_array
+    dict_to_array, default_state_keys
 import Ska.Numpy
 import Ska.engarchive.fetch_sci as fetch
 import matplotlib.pyplot as plt
@@ -516,7 +516,7 @@ class ThermalModelRunner(ModelDataset):
         self.no_earth_heat = getattr(self, "no_earth_heat", False)
 
         if states is None:
-            states = commands.states.get_states(tstart, tstop,
+            states = commands.states.get_states(tstart, tstop, state_keys=default_state_keys,
                                                 merge_identical=True).as_array()
 
         if isinstance(states, States):
@@ -958,7 +958,8 @@ def make_default_states():
         "q1": np.array([1.0]),
         "q2": np.array([0.0]),
         "q3": np.array([0.0]),
-        "q4": np.array([0.0])
+        "q4": np.array([0.0]),
+        "hrc_15v": np.array(["OFF"]),
     }
 
 
@@ -1146,7 +1147,7 @@ class SimulateECSRun(ThermalModelRunner):
             loads = set(l.load_name for l in events.load_segments.filter(tstart, tend))
             mylog.info(f"Modeling a {ccd_count}-chip state concurrent with "
                        f"states from the following vehicle loads: {loads}")
-            states = cmd_states.get_states(tstart, tstop,
+            states = cmd_states.get_states(tstart, tstop, state_keys=default_state_keys,
                                            merge_identical=True).as_array()
             run_idxs = states["tstart"] < tstop
             states["ccd_count"][run_idxs] = ccd_count
@@ -1156,6 +1157,7 @@ class SimulateECSRun(ThermalModelRunner):
             states["simpos"][run_idxs] = -99616.0
             states["hetg"][run_idxs] = "RETR"
             states["letg"][run_idxs] = "RETR"
+            states["hrc_15v"][run_idxs] = "OFF"
         else:
             states = {
                 "ccd_count": np.array([ccd_count], dtype='int'),
@@ -1169,6 +1171,7 @@ class SimulateECSRun(ThermalModelRunner):
                 "tstop": np.array([tstop]),
                 "hetg": np.array(["RETR"]),
                 "letg": np.array(["RETR"]),
+                "hrc_15v": np.array(["OFF"]),
                 "dh_heater": np.array([dh_heater], dtype='int')
             }
             if len(attitude) == 2:

@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 from setuptools import setup
 
+try:
+    from testr.setup_helper import cmdclass
+except ImportError:
+    cmdclass = {}
+
 setup(name='acispy',
       packages=['acispy'],
       use_scm_version=True,
@@ -15,4 +20,8 @@ setup(name='acispy',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 3'
       ],
+      include_package_data=True,
+      tests_require=["pytest"],
+      zip_safe=False,
+      cmdclass=cmdclass,
       )

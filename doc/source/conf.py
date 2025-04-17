@@ -20,15 +20,13 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.abspath('../../'))
 
-import sphinx_bootstrap_theme
-html_theme = 'bootstrap'
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+html_theme = 'pydata_sphinx_theme'
 
 html_theme_options = dict(
-        bootswatch_theme="readable",
-        navbar_sidebarrel=False,
-        globaltoc_depth=2,
-        body_max_width="none"
+    show_prev_next=False,
+    sidebar_includehidden=False,
+    navbar_center=[],
+    navbar_align="right" 
 )
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -309,8 +307,9 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
-intersphinx_mapping = {"https://docs.python.org/3/": None,
-                       "https://numpy.org/doc/stable/": None,
-                       "https://matplotlib.org/stable/": None,
-                       "https://docs.astropy.org/en/stable": None,
-                       }
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "astropy": ("https://docs.astropy.org/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+}

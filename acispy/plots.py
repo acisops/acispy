@@ -32,8 +32,8 @@ units_map = {"deg_C": "Temperature",
 
 unit_labels = {"V": 'V',
                "A": 'A',
-               "deg_C": '$\mathrm{^\circ{C}}$',
-               "deg_F": '$\mathrm{^\circ{F}}$',
+               "deg_C": r'$\mathrm{^\circ{C}}$',
+               "deg_F": r'$\mathrm{^\circ{F}}$',
                "W": "W",
                "s": "s",
                "deg": "deg"}

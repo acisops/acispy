@@ -26,6 +26,7 @@ short_name = {"1deamzt": "dea",
               "1dpamzt": "dpa",
               "1pdeaat": "psmc",
               "1dpamyt": "1dpamyt",
+              "2ceahvpt": "cea",
               "fptemp_11": "acisfp",
               "tmp_fep1_mong": "fep1_mong",
               "tmp_fep1_actel": "fep1_actel",
@@ -55,7 +56,8 @@ acis_models = ["1deamzt",
                "fptemp_11",
                "tmp_fep1_mong",
                "tmp_fep1_actel",
-               "tmp_bep_pcb"]
+               "tmp_bep_pcb",
+               "2ceahvpt"]
 
 model_classes = {
     "dpa": "DPACheck",
@@ -66,6 +68,7 @@ model_classes = {
     "fep1_mong": "FEP1MongCheck",
     "fep1_actel": "FEP1ActelCheck",
     "bep_pcb": "BEPPCBCheck"
+    "cea": "CEACheck"
 }
 
 

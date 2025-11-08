@@ -67,7 +67,7 @@ model_classes = {
     "acisfp": "ACISFPCheck",
     "fep1_mong": "FEP1MongCheck",
     "fep1_actel": "FEP1ActelCheck",
-    "bep_pcb": "BEPPCBCheck"
+    "bep_pcb": "BEPPCBCheck",
     "cea": "CEACheck"
 }
 
